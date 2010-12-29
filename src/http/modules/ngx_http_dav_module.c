@@ -202,6 +202,7 @@ ngx_http_dav_put_handler(ngx_http_request_t *r)
 {
     size_t                    root;
     time_t                    date;
+    ngx_fd_t                  nfd;
     ngx_str_t                *temp, path;
     ngx_uint_t                status;
     ngx_file_info_t           fi;
@@ -257,9 +258,25 @@ ngx_http_dav_put_handler(ngx_http_request_t *r)
         }
     }
 
-    if (ngx_ext_rename_file(temp, &path, &ext) != NGX_OK) {
-        ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
-        return;
+    if (&r->request_body->temp_file->file) {
+        if (ngx_ext_rename_file(temp, &path, &ext) != NGX_OK) {
+            ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+    } else {
+        nfd = ngx_open_file(path.data, NGX_FILE_WRONLY, NGX_FILE_TRUNCATE,
+                           ext.access);
+
+        if (nfd == NGX_INVALID_FILE) {
+            (void) ngx_http_dav_error(r->connection->log, ngx_errno, 0,
+                                      "error trunctating file: %s", path.data);
+            ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
+            return;
+
+        }
+
+        ngx_close_file(nfd);
     }
 
     if (status == NGX_HTTP_CREATED) {

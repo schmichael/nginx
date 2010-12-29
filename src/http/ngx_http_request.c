@@ -1527,14 +1527,6 @@ ngx_http_process_request_header(ngx_http_request_t *r)
         }
     }
 
-    if (r->method & NGX_HTTP_PUT && r->headers_in.content_length_n == -1) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                  "client sent %V method without \"Content-Length\" header",
-                  &r->method_name);
-        ngx_http_finalize_request(r, NGX_HTTP_LENGTH_REQUIRED);
-        return NGX_ERROR;
-    }
-
     if (r->method & NGX_HTTP_TRACE) {
         ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
                       "client sent TRACE method");
